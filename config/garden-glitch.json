@@ -1,0 +1,27 @@
+{
+  "app": "GardenGlitch",
+  "animals": {
+    "0": "Chick",
+    "1": "Hen",
+    "2": "Rooster",
+    "3": "Sheep",
+    "4": "Pig",
+    "5": "Donkey",
+    "6": "Duck",
+    "7": "Buffalo",
+    "8": "Cow"
+  },
+  "runtime": {
+    "typescript": true,
+    "javascript": true,
+    "html": true,
+    "css": true,
+    "sql": true,
+    "deno": true,
+    "python": true,
+    "bash": true,
+    "yaml": true,
+    "rust_wasm": true,
+    "json": true
+  }
+}

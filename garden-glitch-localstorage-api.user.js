@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch LocalStorage API
 // @namespace    GardenGlitch
-// @version      1.0.0
+// @version      1.0.1
 // @description  Safe explicit GardenGlitch localStorage API with live change events
 // @match        *://*/*
 // @grant        none
@@ -14,8 +14,7 @@
 
   const EVENTS = 'GardenGlitch:state-change';
   const GAME_KEY = '3x3-garden.UserDataPackage';
-  const MAGIC_KEY = '3x3-garden.magicTreeSavedInventoryInfoKey';
-  const watched = new Set([GAME_KEY, MAGIC_KEY, 'GardenGlitch_PlayerHookTest']);
+  const watched = new Set([GAME_KEY, 'GardenGlitch_PlayerHookTest']);
 
   const emit = (key, oldValue, newValue) => {
     if (!watched.has(key)) return;
@@ -47,7 +46,7 @@
 
   const api = {
     eventName: EVENTS,
-    keys: Object.freeze({ GAME_KEY, MAGIC_KEY }),
+    keys: Object.freeze({ GAME_KEY }),
     read(key, fallback = null) {
       return parse(key, fallback);
     },
@@ -65,12 +64,6 @@
     },
     setGame(game) {
       writeRaw(GAME_KEY, game || {});
-    },
-    getMagic() {
-      return parse(MAGIC_KEY, { items: [] });
-    },
-    setMagic(magic) {
-      writeRaw(MAGIC_KEY, magic || { items: [] });
     },
     onChange(callback) {
       const handler = event => callback(event.detail);

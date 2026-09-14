@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.0.1
+// @version      2.0.3
 // @description  GardenGlitch modular panel loader
 // @match        *://*/*
 // @grant        none
@@ -17,7 +17,8 @@
     B+'garden-glitch-terminal-features.user.js',
     M+'garden-glitch-animals.user.js',
     M+'garden-glitch-refresh.user.js',
-    M+'garden-glitch-remove-magic-tree.user.js'
+    M+'garden-glitch-remove-magic-tree.user.js',
+    M+'garden-glitch-enhancements.user.js'
   ];
   for(const url of files){
     try{

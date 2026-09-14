@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Live LocalStorage Sync
 // @namespace    GardenGlitch
-// @version      1.0.0
+// @version      1.0.1
 // @description  Broadcast GardenGlitch localStorage changes immediately without page refreshes
 // @match        *://*/*
 // @grant        none
@@ -12,7 +12,6 @@
   const EVENTS='GardenGlitch:storage-change';
   const keys=new Set([
     '3x3-garden.UserDataPackage',
-    '3x3-garden.magicTreeSavedInventoryInfoKey',
     'GardenGlitch_PlayerHookTest',
     'GardenGlitch_LocalBackup'
   ]);

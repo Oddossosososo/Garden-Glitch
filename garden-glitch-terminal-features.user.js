@@ -1,19 +1,21 @@
 // ==UserScript==
 // @name         GardenGlitch Terminal Features
 // @namespace    GardenGlitch
-// @version      1.0.0
-// @description  Extra terminal HUD, command history, diagnostics and quick actions for GardenGlitch
+// @version      1.1.0
+// @description  Extra terminal HUD, command history, diagnostics, quick actions and correct animal IDs for GardenGlitch
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
 
 (()=>{
 'use strict';
+const ANIMALS=['Chick','Hen','Rooster','Sheep','Pig','Donkey','Duck','Buffalo','Cow'];
 const apply=()=>{
  const host=document.getElementById('ggHost'),root=host?.shadowRoot;
- if(!root||root.getElementById('gg-terminal-features'))return !!root;
+ if(!root)return false;
  const body=root.querySelector('#b'),panel=root.querySelector('#p');
  if(!body||!panel)return false;
+ if(root.getElementById('gg-terminal-features'))return true;
  const style=document.createElement('style');
  style.id='gg-terminal-features';
  style.textContent=`
@@ -25,6 +27,19 @@ const apply=()=>{
  .gg-hist:before{content:"> ";color:#00ff46}
  `;
  root.appendChild(style);
+ const fixAnimals=()=>{
+  const a=root.querySelector('#animal');
+  if(!a)return false;
+  const current=a.value;
+  const html=ANIMALS.map((name,id)=>`<option value="${id}">${id} • ${name}</option>`).join('');
+  if(a.innerHTML!==html)a.innerHTML=html;
+  if([...a.options].some(o=>o.value===current))a.value=current;
+  else a.value='0';
+  return true;
+ };
+ fixAnimals();
+ const animalWatch=new MutationObserver(()=>fixAnimals());
+ animalWatch.observe(body,{childList:true,subtree:true});
  let box=root.querySelector('#gg-term-extra');
  if(!box){
   box=document.createElement('div');box.id='gg-term-extra';
@@ -34,12 +49,12 @@ const apply=()=>{
  let history=root.querySelector('#gg-term-history');
  if(!history){history=document.createElement('div');history.id='gg-term-history';body.insertBefore(history,root.querySelector('.tabs')||null)}
  const add=t=>{const x=document.createElement('div');x.className='gg-hist';x.textContent=t;history.appendChild(x);while(history.children.length>8)history.firstChild.remove();history.scrollTop=history.scrollHeight};
- const status=()=>{add(`host=${!!host} panel=${!!panel} online=${navigator.onLine}`);};
+ const status=()=>{add(`host=${!!host} panel=${!!panel} online=${navigator.onLine}`)};
  const storage=()=>{let n=0;for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k)n+=k.length+(localStorage.getItem(k)||'').length}add(`localStorage ~${n.toLocaleString()} chars`)};
  root.querySelector('#gg-stat').onclick=()=>{status();const s=root.querySelector('#st');if(s)s.textContent='[SYS://STATUS] ONLINE'};
  root.querySelector('#gg-storage').onclick=()=>{storage();const s=root.querySelector('#st');if(s)s.textContent='[SYS://STORAGE] SCANNED'};
- root.querySelector('#gg-garden').onclick=()=>{root.querySelector('#ga')?.click();add('garden grow command sent');};
- root.querySelector('#gg-inventory').onclick=()=>{root.querySelector('[data-p="i"]')?.click();add('inventory module opened');};
+ root.querySelector('#gg-garden').onclick=()=>{root.querySelector('#ga')?.click();add('garden grow command sent')};
+ root.querySelector('#gg-inventory').onclick=()=>{root.querySelector('[data-p="i"]')?.click();add('inventory module opened')};
  const input=root.querySelector('#gg-cmd-input');
  if(input&&!input.dataset.ggHistory){
   input.dataset.ggHistory='1';
@@ -51,6 +66,7 @@ const apply=()=>{
   });
  }
  add('terminal extensions loaded');
+ add('animal IDs locked: 0-8');
  return true;
 };
 if(!apply()){const t=setInterval(()=>{if(apply())clearInterval(t)},250);setTimeout(()=>clearInterval(t),15000)}

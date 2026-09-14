@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.2.0
-// @description  GardenGlitch modular panel loader with no-refresh bridge
+// @version      2.3.0
+// @description  GardenGlitch modular panel loader with no-refresh and game reload modules
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -15,6 +15,7 @@
     M+'garden-glitch-localstorage-api.user.js',
     M+'garden-glitch-live-sync.user.js',
     M+'garden-glitch-no-refresh.user.js',
+    M+'garden-glitch-game-reload.user.js',
     B+'garden-glitch-panel.user.js',
     B+'garden-glitch-look-refresh.user.js',
     B+'garden-glitch-terminal-features.user.js',
@@ -28,8 +29,7 @@
       const r=await fetch(url,{cache:'no-store'});
       if(!r.ok)throw new Error(url+' -> '+r.status);
       const code=await r.text();
-      const run=new Function(code+'\n//# sourceURL='+url);
-      run();
+      new Function(code+'\n//# sourceURL='+url)();
     }catch(e){console.error('GardenGlitch module failed:',url,e);}
   }
 })();

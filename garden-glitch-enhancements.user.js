@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Enhancements
 // @namespace    GardenGlitch
-// @version      1.0.0
-// @description  Farm stats, animal manager, save inspector, and robust Grow All
+// @version      1.1.0
+// @description  Farm stats, animal manager, robust Grow All, and no-refresh save sync
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -12,12 +12,33 @@
 
   const GAME_KEY='3x3-garden.UserDataPackage';
   const ANIMAL_NAMES=['Chick','Hen','Rooster','Sheep','Pig','Donkey','Duck','Buffalo','Cow'];
+  const NO_REFRESH_EVENT='GardenGlitch:no-refresh-state';
 
   const getRoot=()=>document.getElementById('ggHost')?.shadowRoot||null;
   const readGame=()=>{
     try{return JSON.parse(localStorage.getItem(GAME_KEY)||'{}')}catch{return {}}
   };
   const writeGame=s=>localStorage.setItem(GAME_KEY,JSON.stringify(s));
+
+  function setStatus(text){
+    const root=getRoot();
+    const st=root?.querySelector('#st');
+    if(st)st.textContent=text;
+  }
+
+  function syncMainFields(s){
+    const root=getRoot();
+    if(!root)return;
+    const values={
+      coins:s.Coins,
+      speed:s.AdditionalGrowthSpeedMultiplier,
+      char:s.CharacterId
+    };
+    for(const [id,value] of Object.entries(values)){
+      const el=root.querySelector('#'+id);
+      if(el&&document.activeElement!==el&&value!==undefined)el.value=String(value);
+    }
+  }
 
   function growAllRobust(){
     const s=readGame();
@@ -33,7 +54,6 @@
       if('GrowTimer' in p)p.GrowTimer=0;
       if('BreakBeforeGrowTimer' in p)p.BreakBeforeGrowTimer=0;
       if('GrowTimeDefault' in p)p.GrowTimeDefault=0;
-
       if(Array.isArray(p.Harvests)){
         for(const h of p.Harvests){
           if(!h||typeof h!=='object')continue;
@@ -46,24 +66,15 @@
     }
 
     writeGame(s);
-    setStatus(`⚡ Grow All fixed • ${plants} plants • ${harvests} harvest slots`);
-    setTimeout(()=>{
-      try{window.GardenGlitchRefresh?.refresh?.()}catch{}
-    },150);
+    syncMainFields(s);
+    renderStats();
+    setStatus(`⚡ Grow All fixed • ${plants} plants • ${harvests} harvest slots • no reload`);
     return true;
-  }
-
-  function setStatus(text){
-    const root=getRoot();
-    const st=root?.querySelector('#st');
-    if(st)st.textContent=text;
   }
 
   function totalHarvestKg(s){
     let n=0;
-    for(const p of (s.Plants||[])){
-      for(const h of (p?.Harvests||[]))n+=Number(h?.GrowthSize)||0;
-    }
+    for(const p of (s.Plants||[]))for(const h of (p?.Harvests||[]))n+=Number(h?.GrowthSize)||0;
     for(const h of (s.InventoryHarvests||[]))n+=(Number(h?.Value)||0)/100;
     return n;
   }
@@ -105,7 +116,6 @@
         <button id="ggStatsRefresh" class="q">📊 Refresh Stats</button>
       </div>`;
     dashboard.insertBefore(card,dashboard.children[dashboard.children.length-1]||null);
-
     root.querySelector('#ggGrowFix').onclick=growAllRobust;
     root.querySelector('#ggStatsRefresh').onclick=renderStats;
 
@@ -116,7 +126,6 @@
       ac.innerHTML=`<b>🐾 Animal Manager</b><div id="ggAnimalStats" class="muted" style="margin:6px 0;line-height:1.5"></div>`;
       animals.appendChild(ac);
     }
-
     return true;
   }
 
@@ -124,20 +133,17 @@
     const root=getRoot();
     if(!root)return;
     const s=readGame();
+    syncMainFields(s);
     const counts=animalCounts(s);
-    const seeds=seedCounts(s);
     const animalTotal=counts.reduce((a,b)=>a+b,0);
     const plantTotal=Array.isArray(s.Plants)?s.Plants.length:0;
     const seedTotal=Array.isArray(s.InventorySeeds)?s.InventorySeeds.length:0;
     const harvestSlots=(s.Plants||[]).reduce((n,p)=>n+(Array.isArray(p?.Harvests)?p.Harvests.length:0),0);
     const kg=totalHarvestKg(s);
     const stats=root.querySelector('#ggStats');
-    if(stats)stats.innerHTML=`💰 Coins: <b>${Number(s.Coins)||0}</b><br>🌿 Plants: <b>${plantTotal}</b> • 🧺 Harvest slots: <b>${harvestSlots}</b><br>🐾 Animals: <b>${animalTotal}</b> • 🌱 Seeds: <b>${seedTotal}</b><br>⚖️ Total harvest KG: <b>${kg.toFixed(2)}</b>`;
+    if(stats)stats.innerHTML=`💰 Coins: <b>${Number(s.Coins)||0}</b><br>🌿 Plants: <b>${plantTotal}</b> • 🧺 Harvest slots: <b>${harvestSlots}</b><br>🐾 Animals: <b>${animalTotal}</b> • 🌱 Seeds: <b>${seedTotal}</b><br>⚖️ Total harvest KG: <b>${kg.toFixed(2)}</b><br>📦 Farm items: <b>${Array.isArray(s.FarmItems)?s.FarmItems.length:0}</b> • 🎒 Other items: <b>${Array.isArray(s.InventoryOther)?s.InventoryOther.length:0}</b>`;
     const ast=root.querySelector('#ggAnimalStats');
-    if(ast){
-      ast.innerHTML=ANIMAL_NAMES.map((name,id)=>`${id} • ${name}: <b>${counts[id]}</b>`).join('<br>');
-    }
-    void seeds;
+    if(ast)ast.innerHTML=ANIMAL_NAMES.map((name,id)=>`${id} • ${name}: <b>${counts[id]}</b>`).join('<br>');
   }
 
   function install(){
@@ -150,6 +156,16 @@
     renderStats();
     return true;
   }
+
+  window.addEventListener(NO_REFRESH_EVENT,e=>{
+    const game=e.detail?.game;
+    if(game)syncMainFields(game);
+    renderStats();
+  });
+
+  window.addEventListener('GardenGlitch:storage-change',e=>{
+    if(e.detail?.key===GAME_KEY)renderStats();
+  });
 
   if(!install()){
     const timer=setInterval(()=>{if(install())clearInterval(timer)},250);

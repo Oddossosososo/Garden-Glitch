@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.0.3
+// @version      2.1.0
 // @description  GardenGlitch modular panel loader
 // @match        *://*/*
 // @grant        none
@@ -12,6 +12,8 @@
   const B='https://raw.githubusercontent.com/Oddossosososo/Garden-Glitch/cr-look-refresh/';
   const M='https://raw.githubusercontent.com/Oddossosososo/Garden-Glitch/main/';
   const files=[
+    M+'garden-glitch-localstorage-api.user.js',
+    M+'garden-glitch-live-sync.user.js',
     B+'garden-glitch-panel.user.js',
     B+'garden-glitch-look-refresh.user.js',
     B+'garden-glitch-terminal-features.user.js',

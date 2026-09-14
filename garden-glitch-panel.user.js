@@ -1,15 +1,85 @@
 // ==UserScript==
-// @name         GardenGlitch Panel
+// @name         GardenGlitch Panel - Fixed Animals
 // @namespace    GardenGlitch
-// @version      1.0.0
-// @description  GardenGlitch cloud/local save panel
+// @version      1.1.0
+// @description  GardenGlitch panel with permanent correct animal IDs
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
 
-(()=>{"use strict";const K='3x3-garden.UserDataPackage',M='3x3-garden.magicTreeSavedInventoryInfoKey',U='https://thuydbkycsjzvfjqfoax.supabase.co',A='sb_publishable_s2GYjmzF7TYBoyPzsIs0mQ_bNRz_lER',GUEST=U+'/rest/v1/garden_saves',ACC=U+'/rest/v1/garden_glitch_account_saves',AUTH=U+'/auth/v1',C=['Carrot','Tomato','Cucumber','Pepper','Cauliflower','Strawberry','Grape','Watermelon','Apple','Pineapple','Banana','Bamboo','Cactus','Mushroom Spore','Flower','Suncorn','Glow Caps','Sunbloom','Frost Bulb'];const read=(k,d={})=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}};let S=read(K,{}),T=read(M,{items:[]}),guest=localStorage.getItem('GardenGlitch_GuestID')||crypto.randomUUID();localStorage.setItem('GardenGlitch_GuestID',guest);let X=read('GardenGlitchSession',null);document.getElementById('ggHost')?.remove();const H=document.createElement('div');H.id='ggHost';H.style='position:fixed;inset:0;z-index:2147483647;pointer-events:none;contain:layout size paint';document.documentElement.appendChild(H);const root=H.attachShadow({mode:'open'});root.innerHTML=`<style>:host,*{box-sizing:border-box}#p{position:fixed;top:60px;left:60px;width:min(500px,calc(100vw - 20px));max-height:calc(100vh - 80px);overflow:auto;pointer-events:auto;color:#fff;font:13px Arial;background:linear-gradient(145deg,#090b18,#1d082a);border:1px solid #19eaff;border-radius:16px;box-shadow:0 0 28px #00eaff33,0 0 70px #a000ff22}#h{padding:12px;cursor:grab;display:flex;justify-content:space-between;border-bottom:1px solid #fff1}#b{padding:10px}.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}.t,.q{padding:7px;border-radius:8px;border:1px solid #00ffff33;background:#ffffff08;color:#fff;cursor:pointer}.t.on{background:#00ffff18;border-color:#00ffff88}.pg{display:none}.pg.on{display:block}.card{margin:7px 0;padding:9px;border:1px solid #ffffff12;border-radius:10px;background:#ffffff06}.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.i,.s{width:100%;padding:7px;border-radius:7px;border:1px solid #ffffff18;background:#101321;color:#fff}.muted{font-size:10px;opacity:.55}.plant{display:grid;grid-template-columns:1fr 80px 48px;gap:5px;align-items:center;margin:5px 0}.wide{grid-column:1/-1}</style><div id=p><div id=h><div><b>🌱 GardenGlitch</b><div class=muted>Guest Cloud • Optional Account</div></div><div><button class=q id=min>—</button><button class=q id=close>×</button></div></div><div id=b><div id=st class=card>Ready</div><div class=tabs><button class='t on' data-p=d>Dashboard</button><button class=t data-p=g>Garden</button><button class=t data-p=i>Inventory</button><button class=t data-p=a>Animals</button><button class=t data-p=c>Account</button><button class=t data-p=s>Save</button></div><section class='pg on' id=pd><div class=card><b>💰 Coins</b><div class=grid><input id=coins class=i type=number><button id=setcoins class=q>Set</button></div></div><div class=card><b>👤 Character</b><div class=grid><select id=char class=s><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><button id=setchar class=q>Set</button><select id=uchar class=s><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><button id=unlock class=q>Unlock</button></div></div><div class=card><b>⚡ Growth Speed</b><div class=grid><input id=speed class=i type=number step=.1><button id=setspeed class=q>Apply</button></div></div><div class=card><div class=grid><button id=grow class=q>⚡ Grow All</button><button id=canvas class=q>🔄 Refresh Canvas</button><button id=swap class=q>🔄 Swap Mode</button><button id=sfx class=q>🔊 SFX</button><button id=backup class=q>💾 Local Backup</button><button id=pos class=q>📍 Reset Panel</button></div></div></section><section class=pg id=pg><div class=card><b>🌿 Plants</b><div class=grid><button id=rp class=q>Refresh</button><button id=ga class=q>Grow All</button><button id=kgall class=q>Set All KG</button><input id=allkg class=i type=number step=.01 value=10><button id=dup class=q>Duplicate First</button></div><div id=plants></div></div></section><section class=pg id=pi><div class=card><b>🌱 Seeds</b><select id=seed class=s></select><div class=grid><input id=sa class=i type=number value=1><button id=adds class=q>Add</button></div></div><div class=card><b>🧺 Harvest</b><select id=harv class=s></select><div class=grid><input id=kg class=i type=number step=.01 value=1><button id=addh class=q>Add KG</button></div></div><div class=card><b>🌳 Magic Tree</b><select id=magic class=s></select><div class=grid><input id=ma class=i type=number value=1><button id=addm class=q>Add</button></div></div></section><section class=pg id=pa><div class=card><b>🐄 Animals</b><select id=animal class=s><option value=0>Cow</option><option value=1>Animal 1</option><option value=2>Animal 2</option><option value=3>Animal 3</option><option value=4>Animal 4</option><option value=5>Animal 5</option></select><div class=grid><input id=aa class=i type=number value=1><button id=adda class=q>Add Animals</button></div></section><section class=pg id=pc><div class=card><b>🔐 Optional Account</b><div id=acct class=muted>Guest saves work without an account.</div><input id=email class=i placeholder='Email'><input id=pass class=i type=password placeholder='Password'><div class=grid><button id=signup class=q>Create</button><button id=login class=q>Sign in</button></div><button id=logout class=q style='margin-top:6px'>Sign out</button></div></section><section class=pg id=ps><div class=card><b>☁️ Save</b><div id=ct class=muted>Guest cloud save ready.</div><div class=grid><button id=save class=q>☁️ Save</button><button id=load class=q>☁️ Load</button></div><button id=rl class=q style='margin-top:6px'>☁️ Load + Reload</button><button id=local class=q style='margin-top:6px'>💾 Local Save</button><button id=localload class=q style='margin-top:6px'>↩️ Local Load</button></div><div class=card><div id=who class=muted></div></div></section></div></div>`;
-// IMPORTANT FIX: the panel lives inside Shadow DOM, so its elements must be queried from root, not document.
-const $=id=>root.querySelector('#'+id);
-function msg(x){$('st').textContent=x}function W(){localStorage.setItem(K,JSON.stringify(S))}function V(){localStorage.setItem(M,JSON.stringify(T))}function hdr(tok){return{apikey:A,Authorization:'Bearer '+tok,'Content-Type':'application/json'}}function key(){return X?.user_id||'guest-'+guest}async function cloudSave(){const id=key(),api=X?ACC:GUEST,hdrs=hdr(X?.access_token||A),body={id,save_data:{game:S,magic:T},updated_at:new Date().toISOString()};let r=await fetch(api+'?on_conflict=id',{method:'POST',headers:{...hdrs,Prefer:'resolution=merge-duplicates'},body:JSON.stringify(body)});msg(r.ok?'☁️ Saved':'❌ Save failed');if(r.ok)localStorage.setItem('GardenGlitch_LastCloudSave',Date.now())}async function cloudLoad(){const id=key(),api=X?ACC:GUEST,hh=hdr(X?.access_token||A);let r=await fetch(api+'?id=eq.'+encodeURIComponent(id)+'&select=save_data,updated_at',{headers:hh}),x=await r.json();if(!r.ok||!x[0]){msg('No cloud save yet');return false}let z=x[0].save_data;S=z.game||z;T=z.magic||{items:[]};W();V();msg('☁️ Loaded');return true}async function auth(path,body){let r=await fetch(AUTH+path,{method:'POST',headers:{apikey:A,'Content-Type':'application/json'},body:JSON.stringify(body)}),j=await r.json();if(!r.ok)throw Error(j.msg||j.error_description||j.message||'Auth failed');return j}function store(j){X={access_token:j.access_token,refresh_token:j.refresh_token,user_id:j.user?.id||j.user_id,email:j.user?.email||$('email').value};localStorage.setItem('GardenGlitchSession',JSON.stringify(X))}async function signup(){try{let j=await auth('/signup',{email:$('email').value,password:$('pass').value});if(j.access_token){store(j);msg('✅ Account created')}else msg('📧 Check email to confirm')}catch(e){msg('❌ '+e.message)}}async function login(){try{let j=await auth('/token?grant_type=password',{email:$('email').value,password:$('pass').value});store(j);location.reload()}catch(e){msg('❌ '+e.message)}}function grow(){if(!Array.isArray(S.Plants))return msg('⚠️ No plants');S.Plants.forEach(p=>{p.GrowTimer=-999999;(p.Harvests||[]).forEach(h=>h.GrowTimer=-999999)});W();msg('⚡ Grow All done')}function render(){let b=$('plants');b.innerHTML='';(S.Plants||[]).forEach((p,i)=>{let id=+p.PlantId||0,h=p.Harvests?.[0],r=document.createElement('div');r.className='plant';r.innerHTML=`<div><b>${C[id]||'Plant '+id}</b><div class=muted>#${i}</div></div><input class=i type=number step=.01 value="${h?.GrowthSize||0}"><button class=q>KG</button>`;r.children[2].onclick=()=>{p.Harvests=p.Harvests||[];p.Harvests[0]=p.Harvests[0]||{PositionId:0,GrowthSize:1,GrowTimeDefault:0,BreakBeforeGrowTimer:0,GrowTimer:0};p.Harvests[0].GrowthSize=+r.children[1].value||0;W();msg('🌿 KG updated')};b.appendChild(r)})}for(const id of ['seed','harv','magic'])C.forEach((n,i)=>{let o=document.createElement('option');o.value=i;o.textContent=i+' • '+n;$(id).appendChild(o)});$('setcoins').onclick=()=>{S.Coins=+$('coins').value||0;W();msg('💰 Coins updated')};$('setspeed').onclick=()=>{S.AdditionalGrowthSpeedMultiplier=+$('speed').value||0;W();msg('⚡ Speed updated')};$('setchar').onclick=()=>{S.CharacterId=+$('char').value||0;W();msg('👤 Character updated')};$('unlock').onclick=()=>{S.AvailableCharacters=[...(new Set([...(S.AvailableCharacters||[]),+$('uchar').value||0]))];W();msg('🔓 Character unlocked')};$('grow').onclick=$('ga').onclick=grow;$('rp').onclick=render;$('kgall').onclick=()=>{let k=+$('allkg').value||0;(S.Plants||[]).forEach(p=>{p.Harvests=p.Harvests||[];p.Harvests[0]=p.Harvests[0]||{PositionId:0,GrowthSize:1,GrowTimeDefault:0,BreakBeforeGrowTimer:0,GrowTimer:0};p.Harvests[0].GrowthSize=k});W();msg('🌿 All plant KG set')};$('dup').onclick=()=>{if(!S.Plants?.length)return msg('⚠️ No plants');let p=JSON.parse(JSON.stringify(S.Plants[0]));p.PlantPosition={...(p.PlantPosition||{}),x:(p.PlantPosition?.x||0)+1.5};S.Plants.push(p);W();render();msg('🌱 First plant duplicated')};$('canvas').onclick=()=>{let c=document.querySelector('#unity-canvas');if(!c)return msg('⚠️ Unity canvas not found');window.dispatchEvent(new Event('resize'));c.dispatchEvent(new Event('resize'));msg('🔄 Canvas refreshed')};$('swap').onclick=()=>{let v=localStorage.getItem('3x3-garden.SwapModeInfo')==='1';localStorage.setItem('3x3-garden.SwapModeInfo',v?'0':'1');msg(v?'🔄 Swap OFF':'🔄 Swap ON')};$('sfx').onclick=()=>{let v=localStorage.getItem('GardenGlitch_SFX')==='1';localStorage.setItem('GardenGlitch_SFX',v?'0':'1');msg(v?'🔇 SFX OFF':'🔊 SFX ON')};$('adds').onclick=()=>{S.InventorySeeds=S.InventorySeeds||[];let id=+$('seed').value,n=Math.max(1,+$('sa').value||1);for(let i=0;i<n;i++)S.InventorySeeds.push(id);W();msg('🌱 Seeds added')};$('addh').onclick=()=>{S.InventoryHarvests=S.InventoryHarvests||[];let id=+$('harv').value,kg=Math.max(0,+$('kg').value||0);S.InventoryHarvests.push({Id:id,Value:Math.round(kg*100)});W();msg('🧺 Harvest added')};$('addm').onclick=()=>{T.items=T.items||[];let id=+$('magic').value,n=Math.max(1,+$('ma').value||1),q=T.items.find(x=>x.Id===id);if(!q){q={Id:id,Value:0};T.items.push(q)}q.Value+=n;V();msg('🌳 Magic Tree updated')};$('adda').onclick=()=>{S.Animals=S.Animals||[];let id=+$('animal').value,n=Math.max(1,+$('aa').value||1);for(let i=0;i<n;i++)S.Animals.push({TypeId:id});W();msg('🐄 Animals added')};$('save').onclick=()=>cloudSave().catch(e=>msg('❌ '+e.message));$('load').onclick=()=>cloudLoad().catch(e=>msg('❌ '+e.message));$('rl').onclick=async()=>{if(await cloudLoad())location.reload()};$('local').onclick=()=>{localStorage.setItem('GardenGlitch_LocalBackup',JSON.stringify({game:S,magic:T}));msg('💾 Local backup saved')};$('localload').onclick=()=>{let z=read('GardenGlitch_LocalBackup',null);if(!z)return msg('No local backup');S=z.game||{};T=z.magic||{items:[]};W();V();msg('↩️ Local backup restored');render()};$('backup').onclick=()=>$('local').click();$('pos').onclick=()=>{localStorage.removeItem('GardenGlitch_Position');$('p').style.left='60px';$('p').style.top='60px';msg('📍 Panel reset')};$('signup').onclick=signup;$('login').onclick=login;$('logout').onclick=()=>{localStorage.removeItem('GardenGlitchSession');location.reload()};root.querySelectorAll('.t').forEach(b=>b.onclick=()=>{root.querySelectorAll('.t').forEach(x=>x.classList.remove('on'));root.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));b.classList.add('on');$('p'+b.dataset.p).classList.add('on');if(b.dataset.p==='g')render()});$('coins').value=S.Coins||0;$('speed').value=S.AdditionalGrowthSpeedMultiplier||0;$('char').value=S.CharacterId||0;if(X){$('acct').textContent='✅ '+(X.email||'Signed in');$('ct').textContent='Account cloud save ready';$('who').textContent='Account save: '+X.user_id}else{$('who').textContent='Guest save ID: '+guest}let d=0,ox=0,oy=0;$('h').onmousedown=e=>{d=1;let r=$('p').getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top};document.addEventListener('mousemove',e=>{if(d){let w=$('p').offsetWidth,h=$('p').offsetHeight;$('p').style.left=Math.max(0,Math.min(innerWidth-w,e.clientX-ox))+'px';$('p').style.top=Math.max(0,Math.min(innerHeight-h,e.clientY-oy))+'px'}});document.addEventListener('mouseup',()=>d=0);$('min').onclick=()=>{$('b').style.display=$('b').style.display==='none'?'':'none'};$('close').onclick=()=>H.remove();document.addEventListener('keydown',e=>{if(e.key==='Escape')H.remove()});render();cloudLoad().catch(()=>{});msg(X?'✅ GardenGlitch ready':'🌱 Guest mode: saves work without an account')})()
-(()=>{const h=document.getElementById('ggHost'),r=h?.shadowRoot,b=r?.querySelector('#canvas');if(!b)return console.warn('Panel not found');b.textContent='🔄 Reload Game';b.onclick=()=>{if(typeof iframeObj!=='undefined'&&iframeObj?.contentWindow)iframeObj.contentWindow.location.reload();else console.warn('iframeObj not found')}})()
-setTimeout(()=>{const b=document.getElementById('ggHost')?.shadowRoot?.querySelector('#canvas');if(b)b.onclick=()=>{if(typeof iframeObj!=='undefined'&&iframeObj?.contentWindow){iframeObj.contentWindow.location.reload()}else{console.warn('iframeObj not found')}}},1000);
+(async()=>{
+  'use strict';
+
+  const URL='https://raw.githubusercontent.com/Oddossosososo/Garden-Glitch/cr-look-refresh/garden-glitch-panel.user.js';
+
+  try{
+    let code=await fetch(URL).then(r=>{
+      if(!r.ok)throw Error('Panel download failed: '+r.status);
+      return r.text();
+    });
+
+    // Replace the old animal dropdown directly in the panel source.
+    code=code.replace(
+      /<select id=animal class=s>.*?<\/select>/,
+      `<select id=animal class=s>
+        <option value=0>0 • Chick</option>
+        <option value=1>1 • Hen</option>
+        <option value=2>2 • Rooster</option>
+        <option value=3>3 • Sheep</option>
+        <option value=4>4 • Pig</option>
+        <option value=5>5 • Donkey</option>
+        <option value=6>6 • Duck</option>
+        <option value=7>7 • Buffalo</option>
+        <option value=8>8 • Cow</option>
+      </select>`
+    );
+
+    // Make sure the mapping survives any panel rebuild.
+    code += `
+      (()=> {
+        const names=[
+          'Chick','Hen','Rooster','Sheep','Pig',
+          'Donkey','Duck','Buffalo','Cow'
+        ];
+
+        const fixAnimals=()=>{
+          const root=document.getElementById('ggHost')?.shadowRoot;
+          const select=root?.querySelector('#animal');
+          if(!select)return false;
+
+          const current=select.value;
+
+          select.innerHTML=names.map(
+            (name,id)=>'<option value="'+id+'">'+id+' • '+name+'</option>'
+          ).join('');
+
+          select.value=
+            [...select.options].some(o=>o.value===current)
+              ? current
+              : '0';
+
+          return true;
+        };
+
+        if(!fixAnimals()){
+          const timer=setInterval(()=>{
+            if(fixAnimals())clearInterval(timer);
+          },100);
+
+          setTimeout(()=>clearInterval(timer),10000);
+        }
+      })();
+    `;
+
+    eval(code);
+
+    console.log(
+      '✅ GardenGlitch loaded with fixed animals:',
+      '0 Chick, 1 Hen, 2 Rooster, 3 Sheep, 4 Pig,',
+      '5 Donkey, 6 Duck, 7 Buffalo, 8 Cow'
+    );
+
+  }catch(err){
+    console.error('❌ GardenGlitch failed:',err);
+  }
+})();

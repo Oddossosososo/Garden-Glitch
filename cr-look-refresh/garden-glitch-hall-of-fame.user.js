@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Hall of Fame
 // @namespace    GardenGlitch
-// @version      1.0.2
+// @version      1.0.3
 // @description  Adds the GardenGlitch Hall of Fame reliably to the CR panel
 // @match        *://*/*
 // @grant        none
@@ -31,9 +31,6 @@
         <div style="padding:8px;border:1px solid #00ffff44;border-radius:8px;background:#00ffff0a">
           <b>🦁 Leo</b><div class="muted">Founding Legend</div>
         </div>
-        <div style="padding:8px;border:1px solid #a000ff44;border-radius:8px;background:#a000ff0a">
-          <b>⚡ Harvey</b><div class="muted">GardenGlitch Legend</div>
-        </div>
         <div style="padding:8px;border:1px solid #ffcc0044;border-radius:8px;background:#ffcc000a">
           <b>🌟 Reece</b><div class="muted">GardenGlitch Legend</div>
         </div>
@@ -41,7 +38,7 @@
 
     dashboard.appendChild(card);
     done=true;
-    console.log('🏆 GardenGlitch Hall of Fame added: Leo, Harvey, Reece');
+    console.log('🏆 GardenGlitch Hall of Fame updated: Leo, Reece');
     return true;
   }
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.3.0
+// @version      2.3.1
 // @description  GardenGlitch modular panel loader with no-refresh and game reload modules
 // @match        *://*/*
 // @grant        none
@@ -22,7 +22,8 @@
     M+'garden-glitch-animals.user.js',
     M+'garden-glitch-refresh.user.js',
     M+'garden-glitch-remove-magic-tree.user.js',
-    M+'garden-glitch-enhancements.user.js'
+    M+'garden-glitch-enhancements.user.js',
+    M+'garden-glitch-hall-of-fame.user.js'
   ];
   for(const url of files){
     try{

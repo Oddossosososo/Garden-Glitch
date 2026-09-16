@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Real Chat
 // @namespace    GardenGlitch
-// @version      1.1.0
+// @version      1.2.0
 // @description  Adds a real shared chat to the GardenGlitch panel with a local owner badge
 // @match        *://*/*
 // @grant        none
@@ -14,16 +14,13 @@ const A='sb_publishable_s2GYjmzF7TYBoyPzsIs0mQ_bNRz_lER';
 const API=U+'/rest/v1/garden_glitch_chat';
 const NAME_KEY='GardenGlitch.Chat.Username';
 const DEVICE_KEY='GardenGlitch_GuestID';
-const OWNER_KEY='GardenGlitch.OwnerDeviceID';
+const OWNER_DEVICE_ID='2470b964-e7f9-43ef-87ec-3c6567f2bd1e';
 const guestKey=localStorage.getItem(DEVICE_KEY)||crypto.randomUUID();
 localStorage.setItem(DEVICE_KEY,guestKey);
 let lastId=0,timer=null;
 const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const username=()=>((localStorage.getItem(NAME_KEY)||'Guest-'+guestKey.slice(0,6)).trim().slice(0,24)||'Guest');
-const isOwnerDevice=()=>{
-  const ownerId=localStorage.getItem(OWNER_KEY);
-  return !!ownerId&&ownerId===localStorage.getItem(DEVICE_KEY);
-};
+const isOwnerDevice=()=>localStorage.getItem(DEVICE_KEY)===OWNER_DEVICE_ID;
 const headers=()=>({apikey:A,'Content-Type':'application/json'});
 const root=()=>document.querySelector('#ggHost')?.shadowRoot;
 async function load(){
@@ -35,7 +32,7 @@ async function load(){
   const list=card?.querySelector('#ggChatMessages');
   if(!list)return;
   list.innerHTML=rows.map(x=>{
-    const localOwner=isOwnerDevice() && x.username===username();
+    const localOwner=isOwnerDevice()&&x.username===username();
     const badge=localOwner?'<span style="margin-left:5px;padding:1px 6px;border-radius:999px;background:linear-gradient(90deg,#ffd86b,#ff9bd2);color:#140d1b;font-size:9px;font-weight:900;box-shadow:0 0 8px #ffd86b66">👑 OWNER</span>':'';
     return `<div style="padding:5px 7px;border:1px solid #00ffff18;border-radius:7px;margin:4px 0;background:#ffffff05"><b style="color:#7cffc4">${esc(x.username)}</b>${badge}<span style="opacity:.45;font-size:10px"> · ${new Date(x.created_at).toLocaleTimeString()}</span><div style="margin-top:2px;word-break:break-word">${esc(x.message)}</div></div>`;
   }).join('');
@@ -68,7 +65,7 @@ function add(){
   dash.appendChild(card);
   const name=r.querySelector('#ggChatName');
   name.value=localStorage.getItem(NAME_KEY)||('Guest-'+guestKey.slice(0,6));
-  r.querySelector('#ggChatSend').onclick=()=>send().catch(e=>r.querySelector('#ggChatStatus').textContent='Chat error');
+  r.querySelector('#ggChatSend').onclick=()=>send().catch(()=>r.querySelector('#ggChatStatus').textContent='Chat error');
   r.querySelector('#ggChatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send().catch(()=>{})}});
   load().then(()=>{r.querySelector('#ggChatStatus').textContent='Online'}).catch(()=>{r.querySelector('#ggChatStatus').textContent='Offline'});
   timer=setInterval(()=>load().catch(()=>{}),2000);

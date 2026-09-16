@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.3.3
-// @description  GardenGlitch modular panel loader with real chat, Dashboard 3.0 and game modules
+// @version      2.3.4
+// @description  GardenGlitch modular panel loader with real chat, Dashboard 3.0 and named Plant Lab
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -21,6 +21,7 @@
     B+'garden-glitch-terminal-features.user.js',
     M+'garden-glitch-chat.user.js',
     M+'garden-glitch-dashboard3.user.js',
+    M+'garden-glitch-dashboard3-named.user.js',
     M+'garden-glitch-animals.user.js',
     M+'garden-glitch-refresh.user.js',
     M+'garden-glitch-remove-magic-tree.user.js',

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Real Chat
 // @namespace    GardenGlitch
-// @version      1.0.0
-// @description  Adds a real shared chat to the GardenGlitch panel
+// @version      1.1.0
+// @description  Adds a real shared chat to the GardenGlitch panel with a local owner badge
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -13,11 +13,17 @@ const U='https://thuydbkycsjzvfjqfoax.supabase.co';
 const A='sb_publishable_s2GYjmzF7TYBoyPzsIs0mQ_bNRz_lER';
 const API=U+'/rest/v1/garden_glitch_chat';
 const NAME_KEY='GardenGlitch.Chat.Username';
-const guestKey=localStorage.getItem('GardenGlitch_GuestID')||crypto.randomUUID();
-localStorage.setItem('GardenGlitch_GuestID',guestKey);
+const DEVICE_KEY='GardenGlitch_GuestID';
+const OWNER_KEY='GardenGlitch.OwnerDeviceID';
+const guestKey=localStorage.getItem(DEVICE_KEY)||crypto.randomUUID();
+localStorage.setItem(DEVICE_KEY,guestKey);
 let lastId=0,timer=null;
 const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const username=()=>((localStorage.getItem(NAME_KEY)||'Guest-'+guestKey.slice(0,6)).trim().slice(0,24)||'Guest');
+const isOwnerDevice=()=>{
+  const ownerId=localStorage.getItem(OWNER_KEY);
+  return !!ownerId&&ownerId===localStorage.getItem(DEVICE_KEY);
+};
 const headers=()=>({apikey:A,'Content-Type':'application/json'});
 const root=()=>document.querySelector('#ggHost')?.shadowRoot;
 async function load(){
@@ -28,7 +34,11 @@ async function load(){
   const card=root()?.querySelector('#ggChatCard');
   const list=card?.querySelector('#ggChatMessages');
   if(!list)return;
-  list.innerHTML=rows.map(x=>`<div style="padding:5px 7px;border:1px solid #00ffff18;border-radius:7px;margin:4px 0;background:#ffffff05"><b style="color:#7cffc4">${esc(x.username)}</b><span style="opacity:.45;font-size:10px"> · ${new Date(x.created_at).toLocaleTimeString()}</span><div style="margin-top:2px;word-break:break-word">${esc(x.message)}</div></div>`).join('');
+  list.innerHTML=rows.map(x=>{
+    const localOwner=isOwnerDevice() && x.username===username();
+    const badge=localOwner?'<span style="margin-left:5px;padding:1px 6px;border-radius:999px;background:linear-gradient(90deg,#ffd86b,#ff9bd2);color:#140d1b;font-size:9px;font-weight:900;box-shadow:0 0 8px #ffd86b66">👑 OWNER</span>':'';
+    return `<div style="padding:5px 7px;border:1px solid #00ffff18;border-radius:7px;margin:4px 0;background:#ffffff05"><b style="color:#7cffc4">${esc(x.username)}</b>${badge}<span style="opacity:.45;font-size:10px"> · ${new Date(x.created_at).toLocaleTimeString()}</span><div style="margin-top:2px;word-break:break-word">${esc(x.message)}</div></div>`;
+  }).join('');
   if(rows.length)lastId=Math.max(lastId,...rows.map(x=>Number(x.id)||0));
   list.scrollTop=list.scrollHeight;
 }

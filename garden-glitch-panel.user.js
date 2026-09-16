@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.3.1
-// @description  GardenGlitch modular panel loader with no-refresh and game reload modules
+// @version      2.3.2
+// @description  GardenGlitch modular panel loader with real chat and game modules
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -19,6 +19,7 @@
     B+'garden-glitch-panel.user.js',
     B+'garden-glitch-look-refresh.user.js',
     B+'garden-glitch-terminal-features.user.js',
+    M+'garden-glitch-chat.user.js',
     M+'garden-glitch-animals.user.js',
     M+'garden-glitch-refresh.user.js',
     M+'garden-glitch-remove-magic-tree.user.js',

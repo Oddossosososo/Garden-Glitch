@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.3.2
-// @description  GardenGlitch modular panel loader with real chat and game modules
+// @version      2.3.3
+// @description  GardenGlitch modular panel loader with real chat, Dashboard 3.0 and game modules
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -20,6 +20,7 @@
     B+'garden-glitch-look-refresh.user.js',
     B+'garden-glitch-terminal-features.user.js',
     M+'garden-glitch-chat.user.js',
+    M+'garden-glitch-dashboard3.user.js',
     M+'garden-glitch-animals.user.js',
     M+'garden-glitch-refresh.user.js',
     M+'garden-glitch-remove-magic-tree.user.js',
@@ -30,7 +31,8 @@
     try{
       const r=await fetch(url,{cache:'no-store'});
       if(!r.ok)throw new Error(url+' -> '+r.status);
-      const code=await r.text();
+      let code=await r.text();
+      code=code.replace(/\}\)\(\)\s*(?=\(\(\)=>)/g,'})();\n');
       new Function(code+'\n//# sourceURL='+url)();
     }catch(e){console.error('GardenGlitch module failed:',url,e);}
   }

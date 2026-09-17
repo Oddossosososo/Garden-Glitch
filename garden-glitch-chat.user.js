@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Real Chat
 // @namespace    GardenGlitch
-// @version      1.3.1
-// @description  Real shared chat with server-verified owner authentication
+// @version      1.3.2
+// @description  Real shared chat with server-verified owner authentication and newest-first messages
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -56,7 +56,7 @@ async function load(){
   const r=await fetch(CHAT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'})});
   if(!r.ok)throw Error('Chat load HTTP '+r.status);
   const data=await r.json();
-  const rows=Array.isArray(data.rows)?data.rows.reverse():[];
+  const rows=Array.isArray(data.rows)?data.rows:[];
   const card=root()?.querySelector('#ggChatCard');
   const list=card?.querySelector('#ggChatMessages');
   if(!list)return;
@@ -64,7 +64,7 @@ async function load(){
     const badge=x.is_owner?'<span style="margin-left:5px;padding:1px 6px;border-radius:999px;background:linear-gradient(90deg,#ffd86b,#ff9bd2);color:#140d1b;font-size:9px;font-weight:900;box-shadow:0 0 8px #ffd86b66">👑 OWNER</span>':'';
     return `<div style="padding:5px 7px;border:1px solid #00ffff18;border-radius:7px;margin:4px 0;background:#ffffff05"><b style="color:#7cffc4">${esc(x.username)}</b>${badge}<span style="opacity:.45;font-size:10px"> · ${new Date(x.created_at).toLocaleTimeString()}</span><div style="margin-top:2px;word-break:break-word">${esc(x.message)}</div></div>`;
   }).join('');
-  list.scrollTop=list.scrollHeight;
+  list.scrollTop=0;
 }
 
 async function send(){

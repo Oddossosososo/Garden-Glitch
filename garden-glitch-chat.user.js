@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Real Chat
 // @namespace    GardenGlitch
-// @version      1.3.0
+// @version      1.3.1
 // @description  Real shared chat with server-verified owner authentication
 // @match        *://*/*
 // @grant        none
@@ -92,6 +92,7 @@ function add(){
   if(r.querySelector('#ggChatCard'))return true;
   const card=document.createElement('div');
   card.id='ggChatCard';card.className='card';
+  card.style.marginTop='80px';
   card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>💬 GardenGlitch Chat</b><span id="ggChatStatus" class="muted">Connecting…</span></div><div style="display:grid;grid-template-columns:1fr;gap:6px;margin-top:7px"><input id="ggChatName" class="i" maxlength="24" placeholder="Username"><div id="ggChatMessages" style="height:180px;overflow:auto;padding:4px;background:#05070d;border:1px solid #00ffff18;border-radius:8px"></div><div style="display:grid;grid-template-columns:1fr auto;gap:6px"><input id="ggChatInput" class="i" maxlength="300" placeholder="Type a message…"><button id="ggChatSend" class="q">Send</button></div><div class="muted">Server-verified chat. Keep personal information out of messages.</div></div>`;
   dash.appendChild(card);
   const name=r.querySelector('#ggChatName');

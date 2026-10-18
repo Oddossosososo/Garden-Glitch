@@ -112,15 +112,30 @@ function add(){
    const ai=priority.indexOf(a),bi=priority.indexOf(b);
    return (ai<0?999:ai)-(bi<0?999:bi)||a.localeCompare(b);
   }).filter(([k,v])=>(friendly(k)+' '+k+' '+JSON.stringify(v)).toLowerCase().includes(filter));
-  fields.innerHTML=entries.map(([k,v])=>`<div style="padding:7px 0;border-bottom:1px solid #ffffff18">
-   <b>${esc(friendly(k))}</b> <span class="muted" style="font-size:11px">${esc(k)}</span>
-   <textarea class="i" data-value-for="${esc(k)}" rows="2" style="width:100%;margin:4px 0;resize:vertical">${esc(JSON.stringify(v))}</textarea>
-   <div style="display:flex;gap:5px"><button class="q" data-save-field="${esc(k)}">Save</button><button class="q" data-delete-field="${esc(k)}">Delete</button></div>
+  const editorControl=(k,v)=>{
+   const key=esc(k);
+   if(typeof v==='boolean')return `<label style="display:flex;align-items:center;gap:8px;margin:7px 0"><input type="checkbox" data-edit="${key}" data-kind="boolean" ${v?'checked':''}> <span>${v?'On':'Off'}</span></label>`;
+   if(typeof v==='number')return `<input class="i" data-edit="${key}" data-kind="number" type="number" step="any" value="${esc(v)}" style="width:100%;margin:4px 0">`;
+   if(typeof v==='string')return `<input class="i" data-edit="${key}" data-kind="string" type="text" value="${esc(v)}" style="width:100%;margin:4px 0">`;
+   return `<details style="margin:5px 0"><summary>Edit advanced JSON (${Array.isArray(v)?'list':v===null?'empty value':'object'})</summary><textarea class="i" data-edit="${key}" data-kind="json" rows="3" style="width:100%;margin:5px 0;resize:vertical">${esc(JSON.stringify(v,null,2))}</textarea></details>`;
+  };
+  fields.innerHTML=entries.map(([k,v])=>`<div style="padding:9px 0;border-bottom:1px solid #ffffff18">
+   <b>${esc(friendly(k))}</b> <span class="muted" style="font-size:11px">(${esc(k)})</span>
+   ${editorControl(k,v)}
+   <button class="q" data-save-field="${esc(k)}" style="width:100%">Save ${esc(friendly(k))}</button>
   </div>`).join('')||'<div class="muted">No matching fields.</div>';
+  fields.querySelectorAll('[data-edit][data-kind="boolean"]').forEach(input=>input.onchange=()=>{const label=input.closest('label')?.querySelector('span');if(label)label.textContent=input.checked?'On':'Off'});
   fields.querySelectorAll('[data-save-field]').forEach(btn=>btn.onclick=()=>{
-   const key=btn.dataset.saveField,area=fields.querySelector('[data-value-for="'+CSS.escape(key)+'"]');
-   try{const value=JSON.parse(area.value),fresh=read();if(!fresh)throw Error('Save not found');fresh[key]=value;write(fresh);render();status.textContent='Saved "'+key+'" to this origin’s localStorage. Server sync is not guaranteed.';}
-   catch(err){status.textContent='Could not save field: '+err.message;}
+   const key=btn.dataset.saveField,area=fields.querySelector('[data-edit="'+CSS.escape(key)+'"]'),kind=area?.dataset.kind;
+   try{
+    if(!area)throw Error('Editor control not found');
+    let value;
+    if(kind==='boolean')value=area.checked;
+    else if(kind==='number'){if(area.value.trim()==='')throw Error('Enter a number');value=Number(area.value);if(!Number.isFinite(value))throw Error('Enter a valid number');}
+    else if(kind==='json')value=JSON.parse(area.value);
+    else value=area.value;
+    const fresh=read();if(!fresh)throw Error('Save not found');fresh[key]=value;write(fresh);render();status.textContent='Saved '+friendly(key)+' to this origin’s localStorage. Server sync is not guaranteed.';
+   }catch(err){status.textContent='Could not save field: '+err.message;}
   });
   fields.querySelectorAll('[data-delete-field]').forEach(btn=>btn.onclick=()=>{
    const key=btn.dataset.deleteField;

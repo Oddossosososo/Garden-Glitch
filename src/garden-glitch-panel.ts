@@ -7,6 +7,9 @@
 // @grant        none
 // ==/UserScript==
 
+// Isolate this legacy userscript's declarations without emitting ES-module syntax.
+(() => {
+
 type AnimalId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 const ANIMALS: Record<AnimalId, string> = {
@@ -66,3 +69,4 @@ async function loadPanel(): Promise<void> {
 loadPanel().catch((error: unknown) => {
   console.error('[GardenGlitch TS]', error);
 });
+})();

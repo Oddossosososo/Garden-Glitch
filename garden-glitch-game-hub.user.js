@@ -60,9 +60,9 @@ function add(){
  <div id="ggh-speed">
   <div class="muted" id="ggh-source">Looking for Speed Escape save…</div>
   <div id="ggh-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0"></div>
-  <details style="margin:8px 0" open><summary>Edit save fields (JSON)</summary>
-   <div class="muted" style="margin:6px 0">Edit any field, including treadmill/speed info. Back up first. Values must be valid JSON, e.g. 123, true, "text", or {"example":1}.</div>
-   <input class="i" id="ggh-filter" placeholder="Filter fields…" style="width:100%;margin:7px 0">
+  <details style="margin:8px 0" open><summary>Easy save editor</summary>
+   <div class="muted" style="margin:6px 0">Most important fields are first. Change a value, then press Save. Treadmill/speed-pad data is listed near the top. Export a backup before changing things.</div>
+   <input class="i" id="ggh-filter" placeholder="Search by simple name…" style="width:100%;margin:7px 0">
    <div id="ggh-fields" style="max-height:360px;overflow:auto"></div>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px">
     <input class="i" id="ggh-new-key" placeholder="New field name">
@@ -102,10 +102,20 @@ function add(){
   card.querySelector('#ggh-stats').innerHTML=stats.map(([k,v])=>`<div style="padding:9px;background:#080d19;border:1px solid #a855f733;border-radius:8px"><div class="muted">${esc(k)}</div><b style="overflow-wrap:anywhere">${esc(v??'—')}</b></div>`).join('');
   const filter=(card.querySelector('#ggh-filter').value||'').toLowerCase();
   const fields=card.querySelector('#ggh-fields');
-  fields.innerHTML=Object.entries(s).filter(([k,v])=>(k+' '+JSON.stringify(v)).toLowerCase().includes(filter)).map(([k,v])=>`<div style="padding:7px 0;border-bottom:1px solid #ffffff18">
-   <b>${esc(k)}</b>
+  const priority=['speed','wins','rebirths','level','hearts','currentWorldId','steps','diamonds','playerName','speedPads','selectedSpeedPad','selectedSpeedPads','equippedTrail','ownedTrails','equippedSkin','skinPreset','customParts'];
+  const friendly=k=>({
+   speed:'Speed',wins:'Wins',rebirths:'Rebirths',level:'Level',hearts:'Hearts',currentWorldId:'Current world',steps:'Steps',diamonds:'Diamonds',playerName:'Player name',
+   speedPads:'Treadmills / speed pads',selectedSpeedPad:'Selected speed pad',selectedSpeedPads:'Selected speed pads',
+   equippedTrail:'Equipped trail',ownedTrails:'Owned trails',equippedSkin:'Equipped skin',skinPreset:'Skin preset',customParts:'Character parts'
+  })[k]||k.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,c=>c.toUpperCase());
+  const entries=Object.entries(s).sort(([a],[b])=>{
+   const ai=priority.indexOf(a),bi=priority.indexOf(b);
+   return (ai<0?999:ai)-(bi<0?999:bi)||a.localeCompare(b);
+  }).filter(([k,v])=>(friendly(k)+' '+k+' '+JSON.stringify(v)).toLowerCase().includes(filter));
+  fields.innerHTML=entries.map(([k,v])=>`<div style="padding:7px 0;border-bottom:1px solid #ffffff18">
+   <b>${esc(friendly(k))}</b> <span class="muted" style="font-size:11px">${esc(k)}</span>
    <textarea class="i" data-value-for="${esc(k)}" rows="2" style="width:100%;margin:4px 0;resize:vertical">${esc(JSON.stringify(v))}</textarea>
-   <div style="display:flex;gap:5px"><button class="q" data-save-field="${esc(k)}">Save field</button><button class="q" data-delete-field="${esc(k)}">Delete field</button></div>
+   <div style="display:flex;gap:5px"><button class="q" data-save-field="${esc(k)}">Save</button><button class="q" data-delete-field="${esc(k)}">Delete</button></div>
   </div>`).join('')||'<div class="muted">No matching fields.</div>';
   fields.querySelectorAll('[data-save-field]').forEach(btn=>btn.onclick=()=>{
    const key=btn.dataset.saveField,area=fields.querySelector('[data-value-for="'+CSS.escape(key)+'"]');

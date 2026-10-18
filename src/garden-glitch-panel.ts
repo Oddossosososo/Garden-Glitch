@@ -7,6 +7,10 @@
 // @grant        none
 // ==/UserScript==
 
+// Keep this older implementation module-scoped so its declarations do not
+// collide with the current loader in garden-glitch-panel-loader.ts.
+export {};
+
 type AnimalId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 const ANIMALS: Record<AnimalId, string> = {

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GardenGlitch Panel
 // @namespace    GardenGlitch
-// @version      2.3.5
-// @description  GardenGlitch modular panel loader with real chat, Dashboard 3.0, named Plant Lab and admin tools
+// @version      2.3.6
+// @description  GardenGlitch modular panel loader with real chat, Dashboard 3.0, named Plant Lab, admin tools and Game Hub
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -27,7 +27,8 @@
     M+'garden-glitch-remove-magic-tree.user.js',
     M+'garden-glitch-enhancements.user.js',
     M+'garden-glitch-hall-of-fame.user.js',
-    M+'garden-glitch-admin-tools.user.js'
+    M+'garden-glitch-admin-tools.user.js',
+    M+'garden-glitch-game-hub.user.js'
   ];
   for(const url of files){
     try{

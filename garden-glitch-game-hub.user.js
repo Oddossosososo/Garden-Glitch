@@ -12,10 +12,12 @@
 if(window.GardenGlitchGameHub)return;
 const SAVE='number-speed-escape';
 const BACKUP='nse-speed-backup';
+const SAVE_KEYS=[SAVE,'number-speed-escape-account-meta','number-speed-escape-shared-speed-v1',BACKUP];
+let selectedSaveKey=SAVE;
 const root=()=>document.querySelector('#ggHost')?.shadowRoot;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const read=()=>{try{const x=JSON.parse(localStorage.getItem(SAVE)||'null');return x&&typeof x==='object'?x:null}catch{return null}};
-const write=s=>localStorage.setItem(SAVE,JSON.stringify(s));
+const read=(key=selectedSaveKey)=>{try{const raw=localStorage.getItem(key);if(raw===null)return null;const x=JSON.parse(raw);return x&&typeof x==='object'&&!Array.isArray(x)?x:{value:x}}catch{return null}};
+const write=(s,key=selectedSaveKey)=>localStorage.setItem(key,JSON.stringify(s));
 let selected='speed';
 function add(){
  const r=root();
@@ -58,6 +60,7 @@ function add(){
   <button class="q" data-tab="chat">💬 Chat</button>
  </div>
  <div id="ggh-speed">
+  <label class="muted" for="ggh-save-key">Save source</label><select class="i" id="ggh-save-key" style="width:100%;margin:5px 0"></select>
   <div class="muted" id="ggh-source">Looking for Speed Escape save…</div>
   <div id="ggh-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0"></div>
   <details style="margin:8px 0" open><summary>Easy save editor</summary>
@@ -89,10 +92,14 @@ function add(){
  }
  card.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>show(b.dataset.tab));
  function render(){
-  const s=read(),backup=localStorage.getItem(BACKUP);
+  const keyPicker=card.querySelector('#ggh-save-key');
+  const available=SAVE_KEYS.filter(k=>localStorage.getItem(k)!==null);
+  if(!available.includes(selectedSaveKey))selectedSaveKey=available.includes(SAVE)?SAVE:available[0]||SAVE;
+  keyPicker.innerHTML=(available.length?available:SAVE_KEYS).map(k=>{const labels={[SAVE]:'Main game save','number-speed-escape-account-meta':'Account metadata','number-speed-escape-shared-speed-v1':'Shared speed',[BACKUP]:'GardenGlitch backup'};return '<option value="'+esc(k)+'" '+(k===selectedSaveKey?'selected':'')+'>'+esc(labels[k]||k)+(localStorage.getItem(k)===null?' (not found)':'')+'</option>'}).join('');
+  const s=read(selectedSaveKey),backup=localStorage.getItem(BACKUP);
   const src=card.querySelector('#ggh-source');
   if(!s){
-   src.textContent=backup?'Active save key not found; backup key exists.':'No active number-speed-escape save found in this origin.';
+   src.textContent=localStorage.getItem(selectedSaveKey)===null?(backup?'Selected key not found; a backup key exists.':'Selected key does not exist in this origin.'):'Editing '+selectedSaveKey+' · localStorage only; server sync is not confirmed.';
    card.querySelector('#ggh-stats').innerHTML='';
    card.querySelector('#ggh-fields').textContent='';
    return;
@@ -134,35 +141,36 @@ function add(){
     else if(kind==='number'){if(area.value.trim()==='')throw Error('Enter a number');value=Number(area.value);if(!Number.isFinite(value))throw Error('Enter a valid number');}
     else if(kind==='json')value=JSON.parse(area.value);
     else value=area.value;
-    const fresh=read();if(!fresh)throw Error('Save not found');fresh[key]=value;write(fresh);render();status.textContent='Saved '+friendly(key)+' to this origin’s localStorage. Server sync is not guaranteed.';
+    const fresh=read(selectedSaveKey);if(!fresh)throw Error('Selected save not found');fresh[key]=value;write(fresh,selectedSaveKey);render();status.textContent='Saved '+friendly(key)+' in '+selectedSaveKey+'. Server sync is not guaranteed.';
    }catch(err){status.textContent='Could not save field: '+err.message;}
   });
   fields.querySelectorAll('[data-delete-field]').forEach(btn=>btn.onclick=()=>{
    const key=btn.dataset.deleteField;
    if(!confirm('Delete local save field "'+key+'"? Export a backup first if needed.'))return;
-   const fresh=read();if(!fresh)return;delete fresh[key];write(fresh);render();status.textContent='Deleted "'+key+'" from the local save.';
+   const fresh=read(selectedSaveKey);if(!fresh)return;delete fresh[key];write(fresh,selectedSaveKey);render();status.textContent='Deleted "'+key+'" from '+selectedSaveKey+'.';
   });
  }
  function moveChat(){
   const c=root()?.querySelector('#ggChatCard'),slot=card.querySelector('#ggh-chat-slot');
   if(c&&slot&&c.parentElement!==slot){c.style.marginTop='0';slot.appendChild(c);}
  }
+ card.querySelector('#ggh-save-key').onchange=e=>{selectedSaveKey=e.target.value;render();status.textContent='Selected '+selectedSaveKey+'.'};
  card.querySelector('#ggh-refresh').onclick=()=>{render();status.textContent='Refreshed. No changes made.'};
  card.querySelector('#ggh-filter').addEventListener('input',render);
  card.querySelector('#ggh-export').onclick=()=>{
-  const s=localStorage.getItem(SAVE);
-  if(!s){status.textContent='No active save to export.';return;}
+  const s=localStorage.getItem(selectedSaveKey);
+  if(!s){status.textContent='Selected key has no data to export.';return;}
   const a=document.createElement('a'),url=URL.createObjectURL(new Blob([s],{type:'application/json'}));
-  a.href=url;a.download='speed-escape-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  a.href=url;a.download=selectedSaveKey.replace(/[^a-z0-9_-]/gi,'-')+'-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   status.textContent='Backup exported.';
  };
  card.querySelector('#ggh-add-field').onclick=()=>{
   const key=card.querySelector('#ggh-new-key').value.trim(),raw=card.querySelector('#ggh-new-value').value;
   if(!key){status.textContent='Enter a field name.';return;}
   let value;try{value=JSON.parse(raw)}catch{status.textContent='Value must be valid JSON.';return;}
-  const fresh=read();if(!fresh){status.textContent='No active save found.';return;}
+  const fresh=read(selectedSaveKey);if(!fresh){status.textContent='Selected save not found.';return;}
   if(Object.prototype.hasOwnProperty.call(fresh,key)&&!confirm('Field already exists. Replace it?'))return;
-  fresh[key]=value;write(fresh);card.querySelector('#ggh-new-key').value='';render();status.textContent='Field "'+key+'" saved locally.';
+  fresh[key]=value;write(fresh,selectedSaveKey);card.querySelector('#ggh-new-key').value='';render();status.textContent='Field "'+key+'" saved in '+selectedSaveKey+'.';
  };
  card.querySelector('#ggh-import-btn').onclick=()=>card.querySelector('#ggh-import').click();
  card.querySelector('#ggh-import').onchange=async e=>{
@@ -171,7 +179,7 @@ function add(){
    const parsed=JSON.parse(await f.text());
    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('Expected a JSON save object.');
    if(!confirm('Replace the active local Speed Escape save with this file? Export a backup first if needed.'))return;
-   write(parsed);render();status.textContent='Imported into localStorage. Reload the game if needed; server sync is not guaranteed.';
+   write(parsed,selectedSaveKey);render();status.textContent='Imported into '+selectedSaveKey+'. Reload the game if needed; server sync is not guaranteed.';
   }catch(err){status.textContent='Import failed: '+err.message;}
   finally{e.target.value='';}
  };

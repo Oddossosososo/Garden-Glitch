@@ -18,8 +18,34 @@ const read=()=>{try{const x=JSON.parse(localStorage.getItem(SAVE)||'null');retur
 const write=s=>localStorage.setItem(SAVE,JSON.stringify(s));
 let selected='speed';
 function add(){
- const r=root(),dash=r?.querySelector('#pd');
- if(!r||!dash)return false;
+ const r=root();
+ if(!r)return false;
+ const nav=r.querySelector('.tabs');
+ let escapeTab=r.querySelector('[data-p="escape"]');
+ let escapePage=r.querySelector('#pe');
+ if(nav&&!escapeTab){
+  escapeTab=document.createElement('button');
+  escapeTab.className='t';
+  escapeTab.dataset.p='escape';
+  escapeTab.textContent='🏃 Escape';
+  nav.insertBefore(escapeTab,nav.firstChild);
+  nav.style.gridTemplateColumns='repeat(7,minmax(0,1fr))';
+ }
+ if(!escapePage){
+  escapePage=document.createElement('section');
+  escapePage.className='pg';
+  escapePage.id='pe';
+  const firstPage=r.querySelector('#pd');
+  if(firstPage?.parentElement)firstPage.parentElement.insertBefore(escapePage,firstPage);
+ }
+ if(!nav||!escapeTab||!escapePage)return false;
+ escapeTab.onclick=()=>{
+  r.querySelectorAll('.t').forEach(x=>x.classList.remove('on'));
+  r.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  escapeTab.classList.add('on');
+  escapePage.classList.add('on');
+ };
+ const dash=escapePage;
  if(r.querySelector('#ggGameHub'))return true;
  const card=document.createElement('section');
  card.id='ggGameHub';card.className='card';
@@ -34,7 +60,16 @@ function add(){
  <div id="ggh-speed">
   <div class="muted" id="ggh-source">Looking for Speed Escape save…</div>
   <div id="ggh-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0"></div>
-  <details style="margin:8px 0"><summary>Inspect save fields</summary><input class="i" id="ggh-filter" placeholder="Filter fields…" style="width:100%;margin:7px 0"><div id="ggh-fields" style="max-height:260px;overflow:auto"></div></details>
+  <details style="margin:8px 0" open><summary>Edit save fields (JSON)</summary>
+   <div class="muted" style="margin:6px 0">Edit any field, including treadmill/speed info. Back up first. Values must be valid JSON, e.g. 123, true, "text", or {"example":1}.</div>
+   <input class="i" id="ggh-filter" placeholder="Filter fields…" style="width:100%;margin:7px 0">
+   <div id="ggh-fields" style="max-height:360px;overflow:auto"></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px">
+    <input class="i" id="ggh-new-key" placeholder="New field name">
+    <input class="i" id="ggh-new-value" value="null" placeholder="JSON value">
+    <button class="q" id="ggh-add-field" style="grid-column:1/-1">＋ Add field</button>
+   </div>
+  </details>
   <div style="display:flex;gap:6px;flex-wrap:wrap">
    <button class="q" id="ggh-refresh">Refresh</button>
    <button class="q" id="ggh-export">Export backup</button>
@@ -66,7 +101,22 @@ function add(){
   const stats=[['Speed',s.speed],['Wins',s.wins],['Rebirths',s.rebirths],['Level',s.level],['Hearts',s.hearts],['World',s.currentWorldId],['Steps',s.steps],['Diamonds',s.diamonds]];
   card.querySelector('#ggh-stats').innerHTML=stats.map(([k,v])=>`<div style="padding:9px;background:#080d19;border:1px solid #a855f733;border-radius:8px"><div class="muted">${esc(k)}</div><b style="overflow-wrap:anywhere">${esc(v??'—')}</b></div>`).join('');
   const filter=(card.querySelector('#ggh-filter').value||'').toLowerCase();
-  card.querySelector('#ggh-fields').innerHTML=Object.entries(s).filter(([k,v])=>(k+' '+JSON.stringify(v)).toLowerCase().includes(filter)).map(([k,v])=>`<div style="padding:6px;border-bottom:1px solid #ffffff18"><b>${esc(k)}</b><div style="white-space:pre-wrap;overflow-wrap:anywhere;color:#c4b5fd">${esc(typeof v==='object'?JSON.stringify(v):String(v))}</div></div>`).join('')||'<div class="muted">No matching fields.</div>';
+  const fields=card.querySelector('#ggh-fields');
+  fields.innerHTML=Object.entries(s).filter(([k,v])=>(k+' '+JSON.stringify(v)).toLowerCase().includes(filter)).map(([k,v])=>`<div style="padding:7px 0;border-bottom:1px solid #ffffff18">
+   <b>${esc(k)}</b>
+   <textarea class="i" data-value-for="${esc(k)}" rows="2" style="width:100%;margin:4px 0;resize:vertical">${esc(JSON.stringify(v))}</textarea>
+   <div style="display:flex;gap:5px"><button class="q" data-save-field="${esc(k)}">Save field</button><button class="q" data-delete-field="${esc(k)}">Delete field</button></div>
+  </div>`).join('')||'<div class="muted">No matching fields.</div>';
+  fields.querySelectorAll('[data-save-field]').forEach(btn=>btn.onclick=()=>{
+   const key=btn.dataset.saveField,area=fields.querySelector('[data-value-for="'+CSS.escape(key)+'"]');
+   try{const value=JSON.parse(area.value),fresh=read();if(!fresh)throw Error('Save not found');fresh[key]=value;write(fresh);render();status.textContent='Saved "'+key+'" to this origin’s localStorage. Server sync is not guaranteed.';}
+   catch(err){status.textContent='Could not save field: '+err.message;}
+  });
+  fields.querySelectorAll('[data-delete-field]').forEach(btn=>btn.onclick=()=>{
+   const key=btn.dataset.deleteField;
+   if(!confirm('Delete local save field "'+key+'"? Export a backup first if needed.'))return;
+   const fresh=read();if(!fresh)return;delete fresh[key];write(fresh);render();status.textContent='Deleted "'+key+'" from the local save.';
+  });
  }
  function moveChat(){
   const c=root()?.querySelector('#ggChatCard'),slot=card.querySelector('#ggh-chat-slot');
@@ -80,6 +130,14 @@ function add(){
   const a=document.createElement('a'),url=URL.createObjectURL(new Blob([s],{type:'application/json'}));
   a.href=url;a.download='speed-escape-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   status.textContent='Backup exported.';
+ };
+ card.querySelector('#ggh-add-field').onclick=()=>{
+  const key=card.querySelector('#ggh-new-key').value.trim(),raw=card.querySelector('#ggh-new-value').value;
+  if(!key){status.textContent='Enter a field name.';return;}
+  let value;try{value=JSON.parse(raw)}catch{status.textContent='Value must be valid JSON.';return;}
+  const fresh=read();if(!fresh){status.textContent='No active save found.';return;}
+  if(Object.prototype.hasOwnProperty.call(fresh,key)&&!confirm('Field already exists. Replace it?'))return;
+  fresh[key]=value;write(fresh);card.querySelector('#ggh-new-key').value='';render();status.textContent='Field "'+key+'" saved locally.';
  };
  card.querySelector('#ggh-import-btn').onclick=()=>card.querySelector('#ggh-import').click();
  card.querySelector('#ggh-import').onchange=async e=>{

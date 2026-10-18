@@ -7,9 +7,8 @@
 // @grant        none
 // ==/UserScript==
 
-// Keep this older implementation module-scoped so its declarations do not
-// collide with the current loader in garden-glitch-panel-loader.ts.
-export {};
+// Isolate this legacy userscript's declarations without emitting ES-module syntax.
+(() => {
 
 type AnimalId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
@@ -70,3 +69,4 @@ async function loadPanel(): Promise<void> {
 loadPanel().catch((error: unknown) => {
   console.error('[GardenGlitch TS]', error);
 });
+})();

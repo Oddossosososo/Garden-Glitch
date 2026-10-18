@@ -17,7 +17,7 @@ let selectedSaveKey=SAVE;
 const root=()=>document.querySelector('#ggHost')?.shadowRoot;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(key=selectedSaveKey)=>{try{const raw=localStorage.getItem(key);if(raw===null)return null;const x=JSON.parse(raw);return x&&typeof x==='object'&&!Array.isArray(x)?x:{value:x}}catch{return null}};
-const write=(s,key=selectedSaveKey)=>localStorage.setItem(key,JSON.stringify(s));
+const write=(s,key=selectedSaveKey)=>{const raw=localStorage.getItem(key);if(raw!==null){try{const prior=JSON.parse(raw);if(prior===null||typeof prior!=='object'){localStorage.setItem(key,JSON.stringify(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')?s.value:s));return}}catch{if(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')&&typeof s.value==='string'){localStorage.setItem(key,s.value);return}}}localStorage.setItem(key,JSON.stringify(s))};
 let selected='speed';
 function add(){
  const r=root();

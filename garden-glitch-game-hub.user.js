@@ -199,7 +199,7 @@ function add(){
    <button class="q" data-save-field="${esc(k)}" style="width:100%">Save ${esc(friendly(k))}</button>
   </div>`).join('')||'<div class="muted">No matching fields.</div>';
   fields.querySelectorAll('[data-edit][data-kind="boolean"]').forEach(input=>input.onchange=()=>{const label=input.closest('label')?.querySelector('span');if(label)label.textContent=input.checked?'On':'Off'});
-  fields.querySelectorAll('[data-save-field]').forEach(btn=>btn.onclick=()=>{
+  fields.querySelectorAll('[data-save-field]').forEach(btn=>btn.onclick=async()=>{
    const key=btn.dataset.saveField,area=fields.querySelector('[data-edit="'+CSS.escape(key)+'"]'),kind=area?.dataset.kind;
    try{
     if(!area)throw Error('Editor control not found');
@@ -231,7 +231,7 @@ function add(){
   a.href=url;a.download=selectedSaveKey.replace(/[^a-z0-9_-]/gi,'-')+'-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   status.textContent='Backup exported.';
  };
- card.querySelector('#ggh-add-field').onclick=()=>{
+ card.querySelector('#ggh-add-field').onclick=async()=>{
   const key=card.querySelector('#ggh-new-key').value.trim(),raw=card.querySelector('#ggh-new-value').value;
   if(!key){status.textContent='Enter a field name.';return;}
   let value;try{value=JSON.parse(raw)}catch{status.textContent='Value must be valid JSON.';return;}

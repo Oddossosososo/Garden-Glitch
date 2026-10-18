@@ -18,6 +18,48 @@ const root=()=>document.querySelector('#ggHost')?.shadowRoot;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(key=selectedSaveKey)=>{try{const raw=localStorage.getItem(key);if(raw===null)return null;const x=JSON.parse(raw);return x&&typeof x==='object'&&!Array.isArray(x)?x:{value:x}}catch{return null}};
 const write=(s,key=selectedSaveKey)=>{const raw=localStorage.getItem(key);if(raw!==null){try{const prior=JSON.parse(raw);if(prior===null||typeof prior!=='object'){localStorage.setItem(key,JSON.stringify(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')?s.value:s));return}}catch{if(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')&&typeof s.value==='string'){localStorage.setItem(key,s.value);return}}}localStorage.setItem(key,JSON.stringify(s))};
+const GAME_FIELDS=new Set(['speed','wins','rebirths','level','hearts','currentWorldId','steps','diamonds','playerName','speedPads','selectedSpeedPad','selectedSpeedPads','equippedTrail','ownedTrails','equippedSkin','skinPreset','customParts','keyboardSoundTheme','outlineColor','dailyReward','recovery','adaptiveMultiplication']);
+const saveFieldAuto=(field,value,sourceKey=selectedSaveKey)=>{
+ const targets=new Set([sourceKey]);
+ if(GAME_FIELDS.has(field))targets.add(SAVE);
+ let count=0;
+ for(const key of targets){
+  const raw=localStorage.getItem(key);
+  if(raw===null)continue;
+  try{
+   const parsed=JSON.parse(raw);
+   if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){
+    if(key===sourceKey||Object.prototype.hasOwnProperty.call(parsed,field)){
+     parsed[field]=value;localStorage.setItem(key,JSON.stringify(parsed));count++;
+    }
+   }else if(field==='speed'&&key==='number-speed-escape-shared-speed-v1'){
+    localStorage.setItem(key,JSON.stringify(value));count++;
+   }
+  }catch{
+   if(field==='speed'&&key==='number-speed-escape-shared-speed-v1'&&typeof value==='number'){
+    localStorage.setItem(key,String(value));count++;
+   }
+  }
+ }
+ // Update matching fields in other existing JSON saves, but never overwrite the backup snapshot.
+ for(const key of SAVE_KEYS){
+  if(key===BACKUP||targets.has(key))continue;
+  const raw=localStorage.getItem(key);if(raw===null)continue;
+  try{
+   const parsed=JSON.parse(raw);
+   if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)&&Object.prototype.hasOwnProperty.call(parsed,field)){
+    parsed[field]=value;localStorage.setItem(key,JSON.stringify(parsed));count++;
+   }else if(field==='speed'&&key==='number-speed-escape-shared-speed-v1'&&(typeof parsed==='number'||typeof parsed==='string')){
+    localStorage.setItem(key,JSON.stringify(value));count++;
+   }
+  }catch{
+   if(field==='speed'&&key==='number-speed-escape-shared-speed-v1'&&typeof value==='number'){
+    localStorage.setItem(key,String(value));count++;
+   }
+  }
+ }
+ return count;
+};
 let selected='speed';
 function add(){
  const r=root();
@@ -141,7 +183,7 @@ function add(){
     else if(kind==='number'){if(area.value.trim()==='')throw Error('Enter a number');value=Number(area.value);if(!Number.isFinite(value))throw Error('Enter a valid number');}
     else if(kind==='json')value=JSON.parse(area.value);
     else value=area.value;
-    const fresh=read(selectedSaveKey);if(!fresh)throw Error('Selected save not found');fresh[key]=value;write(fresh,selectedSaveKey);render();status.textContent='Saved '+friendly(key)+' in '+selectedSaveKey+'. Server sync is not guaranteed.';
+    const fresh=read(selectedSaveKey);if(!fresh)throw Error('Selected save not found');fresh[key]=value;write(fresh,selectedSaveKey);const updated=saveFieldAuto(key,value,selectedSaveKey);render();status.textContent='Saved '+friendly(key)+' and updated '+updated+' matching local save location(s). Backup snapshots were left unchanged; server sync is not guaranteed.';
    }catch(err){status.textContent='Could not save field: '+err.message;}
   });
   fields.querySelectorAll('[data-delete-field]').forEach(btn=>btn.onclick=()=>{

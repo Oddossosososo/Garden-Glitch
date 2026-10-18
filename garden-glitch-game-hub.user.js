@@ -44,6 +44,29 @@ const syncIndexedDBSave=(save)=>new Promise(resolve=>{
   }catch(err){try{db.close()}catch{};done(0)}
  };
 });
+// Bridge edits into embedded Timestables game frames (each origin has separate storage).
+const isTimestablesHost = h => /(^|\\.)timestables\\.com$/i.test(h);
+const sendSaveToGameFrames = save => {
+  for (const frame of document.querySelectorAll('iframe')) {
+    try {
+      const url = new URL(frame.src, location.href);
+      if (isTimestablesHost(url.hostname)) frame.contentWindow?.postMessage({type:'GardenGlitchSpeedEscapeApply', save}, url.origin);
+    } catch {}
+  }
+};
+window.addEventListener('message', async event => {
+  if (event.source !== window.parent || !isTimestablesHost(location.hostname) || !isTimestablesHost(event.origin)) return;
+  const data = event.data;
+  if (!data || data.type !== 'GardenGlitchSpeedEscapeApply' || !data.save || typeof data.save !== 'object' || Array.isArray(data.save)) return;
+  try {
+    const merged = {...(read(SAVE) || {})};
+    for (const key of GAME_FIELDS) if (Object.prototype.hasOwnProperty.call(data.save, key)) merged[key] = data.save[key];
+    write(merged, SAVE);
+    await syncIndexedDBSave(merged);
+    console.info('GardenGlitch: applied Speed Escape save inside game frame; reloading.');
+    setTimeout(() => location.reload(), 250);
+  } catch (err) { console.warn('GardenGlitch: iframe save apply failed', err); }
+});
 const saveFieldAuto=(field,value,sourceKey=selectedSaveKey)=>{
  const targets=new Set([sourceKey]);
  if(GAME_FIELDS.has(field))targets.add(SAVE);
@@ -83,6 +106,7 @@ const saveFieldAuto=(field,value,sourceKey=selectedSaveKey)=>{
    }
   }
  }
+ if(GAME_FIELDS.has(field))sendSaveToGameFrames(read(SAVE)||{});
  return count;
 };
 let selected='speed';

@@ -19,6 +19,31 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const read=(key=selectedSaveKey)=>{try{const raw=localStorage.getItem(key);if(raw===null)return null;const x=JSON.parse(raw);return x&&typeof x==='object'&&!Array.isArray(x)?x:{value:x}}catch{return null}};
 const write=(s,key=selectedSaveKey)=>{const raw=localStorage.getItem(key);if(raw!==null){try{const prior=JSON.parse(raw);if(prior===null||typeof prior!=='object'){localStorage.setItem(key,JSON.stringify(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')?s.value:s));return}}catch{if(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')&&typeof s.value==='string'){localStorage.setItem(key,s.value);return}}}localStorage.setItem(key,JSON.stringify(s))};
 const GAME_FIELDS=new Set(['speed','wins','rebirths','level','hearts','currentWorldId','steps','diamonds','playerName','speedPads','selectedSpeedPad','selectedSpeedPads','equippedTrail','ownedTrails','equippedSkin','skinPreset','customParts','keyboardSoundTheme','outlineColor','dailyReward','recovery','adaptiveMultiplication']);
+const syncIndexedDBSave=(save)=>new Promise(resolve=>{
+ let settled=false;const done=n=>{if(!settled){settled=true;resolve(n)}};
+ let request;
+ try{request=indexedDB.open('number-speed-escape-storage')}catch{return done(0)}
+ request.onerror=()=>done(0);
+ request.onsuccess=()=>{
+  const db=request.result;
+  if(!db.objectStoreNames.contains('progress')){db.close();return done(0)}
+  let tx,count=0;
+  try{
+   tx=db.transaction('progress','readwrite');
+   const store=tx.objectStore('progress');
+   const get=store.getAll();
+   get.onsuccess=()=>{
+    for(const record of get.result||[]){
+     if(!record||typeof record!=='object'||Array.isArray(record))continue;
+     const merged={...record,...save};
+     try{store.put(merged);count++}catch(err){console.warn('GardenGlitch: could not update IndexedDB record',err)}
+    }
+   };
+   tx.oncomplete=()=>{db.close();done(count)};
+   tx.onerror=tx.onabort=()=>{db.close();done(0)};
+  }catch(err){try{db.close()}catch{};done(0)}
+ };
+});
 const saveFieldAuto=(field,value,sourceKey=selectedSaveKey)=>{
  const targets=new Set([sourceKey]);
  if(GAME_FIELDS.has(field))targets.add(SAVE);
@@ -183,7 +208,7 @@ function add(){
     else if(kind==='number'){if(area.value.trim()==='')throw Error('Enter a number');value=Number(area.value);if(!Number.isFinite(value))throw Error('Enter a valid number');}
     else if(kind==='json')value=JSON.parse(area.value);
     else value=area.value;
-    const fresh=read(selectedSaveKey);if(!fresh)throw Error('Selected save not found');fresh[key]=value;write(fresh,selectedSaveKey);const updated=saveFieldAuto(key,value,selectedSaveKey);render();status.textContent='Saved '+friendly(key)+' and updated '+updated+' matching local save location(s). Backup snapshots were left unchanged; server sync is not guaranteed.';
+    const fresh=read(selectedSaveKey);if(!fresh)throw Error('Selected save not found');fresh[key]=value;write(fresh,selectedSaveKey);const updated=saveFieldAuto(key,value,selectedSaveKey);const idbUpdated=GAME_FIELDS.has(key)?await syncIndexedDBSave(fresh):0;render();status.textContent='Saved '+friendly(key)+' · updated '+updated+' localStorage location(s) and '+idbUpdated+' IndexedDB progress record(s). Reload the game if needed; server sync is not guaranteed.';
    }catch(err){status.textContent='Could not save field: '+err.message;}
   });
   fields.querySelectorAll('[data-delete-field]').forEach(btn=>btn.onclick=()=>{
@@ -212,7 +237,7 @@ function add(){
   let value;try{value=JSON.parse(raw)}catch{status.textContent='Value must be valid JSON.';return;}
   const fresh=read(selectedSaveKey);if(!fresh){status.textContent='Selected save not found.';return;}
   if(Object.prototype.hasOwnProperty.call(fresh,key)&&!confirm('Field already exists. Replace it?'))return;
-  fresh[key]=value;write(fresh,selectedSaveKey);card.querySelector('#ggh-new-key').value='';render();status.textContent='Field "'+key+'" saved in '+selectedSaveKey+'.';
+  fresh[key]=value;write(fresh,selectedSaveKey);const idbUpdated=GAME_FIELDS.has(key)?await syncIndexedDBSave(fresh):0;card.querySelector('#ggh-new-key').value='';render();status.textContent='Field "'+key+'" saved in '+selectedSaveKey+'; synced '+idbUpdated+' IndexedDB record(s).';
  };
  card.querySelector('#ggh-import-btn').onclick=()=>card.querySelector('#ggh-import').click();
  card.querySelector('#ggh-import').onchange=async e=>{
@@ -221,7 +246,7 @@ function add(){
    const parsed=JSON.parse(await f.text());
    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error('Expected a JSON save object.');
    if(!confirm('Replace the active local Speed Escape save with this file? Export a backup first if needed.'))return;
-   write(parsed,selectedSaveKey);render();status.textContent='Imported into '+selectedSaveKey+'. Reload the game if needed; server sync is not guaranteed.';
+   write(parsed,selectedSaveKey);const idbUpdated=await syncIndexedDBSave(parsed);render();status.textContent='Imported into '+selectedSaveKey+' and synced '+idbUpdated+' IndexedDB progress record(s). Reload the game if needed; server sync is not guaranteed.';
   }catch(err){status.textContent='Import failed: '+err.message;}
   finally{e.target.value='';}
  };

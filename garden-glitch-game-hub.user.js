@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GardenGlitch Game Hub
 // @namespace    GardenGlitch
-// @version      1.0.0
+// @version      1.0.1
 // @description  GardenGlitch tabs for Speed Escape save tools and shared chat
 // @match        *://*/*
 // @grant        none
@@ -18,7 +18,7 @@ const root=()=>document.querySelector('#ggHost')?.shadowRoot;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(key=selectedSaveKey)=>{try{const raw=localStorage.getItem(key);if(raw===null)return null;const x=JSON.parse(raw);return x&&typeof x==='object'&&!Array.isArray(x)?x:{value:x}}catch{return null}};
 const write=(s,key=selectedSaveKey)=>{const raw=localStorage.getItem(key);if(raw!==null){try{const prior=JSON.parse(raw);if(prior===null||typeof prior!=='object'){localStorage.setItem(key,JSON.stringify(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')?s.value:s));return}}catch{if(Object.keys(s).length===1&&Object.prototype.hasOwnProperty.call(s,'value')&&typeof s.value==='string'){localStorage.setItem(key,s.value);return}}}localStorage.setItem(key,JSON.stringify(s))};
-const GAME_FIELDS=new Set(['speed','wins','rebirths','level','hearts','currentWorldId','steps','diamonds','playerName','speedPads','selectedSpeedPad','selectedSpeedPads','equippedTrail','ownedTrails','equippedSkin','skinPreset','customParts','keyboardSoundTheme','outlineColor','dailyReward','recovery','adaptiveMultiplication']);
+const GAME_FIELDS=new Set(['speed','customSpeedRatio','wins','rebirths','level','hearts','currentWorldId','steps','diamonds','playerName','speedPads','selectedSpeedPad','selectedSpeedPads','equippedTrail','ownedTrails','equippedSkin','skinPreset','customParts','keyboardSoundTheme','outlineColor','dailyReward','recovery','adaptiveMultiplication']);
 const syncIndexedDBSave=(save)=>new Promise(resolve=>{
  let settled=false;const done=n=>{if(!settled){settled=true;resolve(n)}};
  let request;
@@ -36,7 +36,7 @@ const syncIndexedDBSave=(save)=>new Promise(resolve=>{
     for(const record of get.result||[]){
      if(!record||typeof record!=='object'||Array.isArray(record))continue;
      const merged={...record,...save};
-     try{store.put(merged);count++}catch(err){console.warn('GardenGlitch: could not update IndexedDB record',err)}
+     try{if(store.keyPath===null)store.put(merged,'number-speed-escape');else store.put(merged);count++}catch(err){console.warn('GardenGlitch: could not update IndexedDB record',err)}
     }
    };
    tx.oncomplete=()=>{db.close();done(count)};
@@ -200,9 +200,9 @@ function add(){
   card.querySelector('#ggh-stats').innerHTML=stats.map(([k,v])=>`<div style="padding:9px;background:#080d19;border:1px solid #a855f733;border-radius:8px"><div class="muted">${esc(k)}</div><b style="overflow-wrap:anywhere">${esc(v??'—')}</b></div>`).join('');
   const filter=(card.querySelector('#ggh-filter').value||'').toLowerCase();
   const fields=card.querySelector('#ggh-fields');
-  const priority=['speed','wins','rebirths','level','hearts','currentWorldId','steps','diamonds','playerName','speedPads','selectedSpeedPad','selectedSpeedPads','equippedTrail','ownedTrails','equippedSkin','skinPreset','customParts'];
+  const priority=['speed','customSpeedRatio','wins','rebirths','level','hearts','currentWorldId','steps','diamonds','playerName','speedPads','selectedSpeedPad','selectedSpeedPads','equippedTrail','ownedTrails','equippedSkin','skinPreset','customParts'];
   const friendly=k=>({
-   speed:'Speed',wins:'Wins',rebirths:'Rebirths',level:'Level',hearts:'Hearts',currentWorldId:'Current world',steps:'Steps',diamonds:'Diamonds',playerName:'Player name',
+   speed:'Speed',customSpeedRatio:'Custom speed ratio',wins:'Wins',rebirths:'Rebirths',level:'Level',hearts:'Hearts',currentWorldId:'Current world',steps:'Steps',diamonds:'Diamonds',playerName:'Player name',
    speedPads:'Treadmills / speed pads',selectedSpeedPad:'Selected speed pad',selectedSpeedPads:'Selected speed pads',
    equippedTrail:'Equipped trail',ownedTrails:'Owned trails',equippedSkin:'Equipped skin',skinPreset:'Skin preset',customParts:'Character parts'
   })[k]||k.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/^./,c=>c.toUpperCase());
